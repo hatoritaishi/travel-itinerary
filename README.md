@@ -33,4 +33,18 @@ Do not add confidential or identifying data to this viewer.
 Deploy the repository root with GitHub Pages. No package installation or
 custom GitHub Actions workflow is required. Serve over HTTPS for Web Crypto.
 
-Files: `index.html`, `styles.css`, `app.js`, `remember.js`, and encrypted `payload.json`.
+A stationary mini Maro appears on 35% of page loads. Tapping plays the adopted
+petting banzai; after 20–35 seconds without interaction, a random heart hug,
+high-five, or cheek rub plays. Reading interaction interrupts idle gestures.
+Artwork is loaded only when selected, with gesture assets loaded on demand.
+Wide screens use the outer page gutter; narrow screens reserve normal layout
+space beside the route or guide heading, including after content is added.
+Standing Maro blinks at random 3–7 second intervals using adopted whole cels.
+Reduced-motion settings use a still pose and skip automatic blinking.
+
+Maro artwork is copied unchanged from adopted assets at source commit
+`79737822383ce1fe933182af23346c7b6bb5e883`: standing, pet-banzai-v1,
+heart-hug-v3, paw-wave-v1, and cheek-circles-soft-arms-v6. No walking or audio.
+
+Files: `index.html`, `styles.css`, `app.js`, `remember.js`, encrypted `payload.json`,
+`mini-maro.js`, `mini-maro-motion.js`, and `assets/mini-maro/`.

@@ -1,5 +1,7 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
+import { createMiniMaro } from './mini-maro.js';
+const miniMaro = createMiniMaro();
 const gate = document.getElementById('gate');
 const opening = document.getElementById('opening');
 const openingMessage = document.getElementById('opening-message');
@@ -229,9 +231,11 @@ function openViewer(data,focus=true) {
   document.querySelector('.brand').href=guideId?itineraryUrl():'#content';
   opened=true;gate.hidden=true;opening.hidden=true;itinerary.hidden=false;passwordInput.value='';
   passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');
+  void miniMaro.mount(content);
   if(focus)content.focus();window.scrollTo(0,0);
 }
 function closeViewer(showGate=true) {
+  miniMaro.unmount();
   opened=false;content.replaceChildren();itinerary.hidden=true;gate.hidden=!showGate;opening.hidden=showGate;errorText.textContent='';passwordInput.value='';setNotice();window.scrollTo(0,0);
 }
 async function restoreRemembered() {

@@ -4,8 +4,13 @@ A small, responsive Japanese itinerary viewer for GitHub Pages.
 
 The initial page displays a password form. The itinerary payload is encrypted
 with AES-256-GCM and a PBKDF2-SHA-256 derived key. The password and plaintext
-itinerary are not stored in this repository. Decrypted data is held in memory
-until the viewer is closed or reloaded. No analytics, third-party scripts,
+itinerary are not stored in this repository. After a successful unlock, the
+browser remembers a non-extractable, decrypt-only CryptoKey in IndexedDB and
+automatically opens the same payload on later visits in that browser. The
+password and decrypted itinerary are not persisted. Logging out deletes the
+remembered key. Other devices/browsers, cleared browser data, and payload key
+changes require another unlock. If storage is unavailable, viewing still works
+and the page reports that the login could not be remembered. No analytics, third-party scripts,
 account details, booking identifiers, payment details, or tracking are included.
 
 A short numeric password is a convenience gate, not strong access control.
@@ -15,4 +20,4 @@ Do not add confidential or identifying data to this viewer.
 Deploy the repository root with GitHub Pages. No package installation or
 custom GitHub Actions workflow is required. Serve over HTTPS for Web Crypto.
 
-Files: `index.html`, `styles.css`, `app.js`, and encrypted `payload.json`.
+Files: `index.html`, `styles.css`, `app.js`, `remember.js`, and encrypted `payload.json`.

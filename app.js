@@ -1,4 +1,5 @@
 'use strict';
+import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
 const gate = document.getElementById('gate');
 const content = document.getElementById('content');
 const itinerary = document.getElementById('itinerary');
@@ -8,6 +9,10 @@ const unlockButton = document.getElementById('unlock-button');
 const errorText = document.getElementById('unlock-error');
 const showPassword = document.getElementById('show-password');
 let opened = false;
+let remembered = false;
+let loading = false;
+const lockButton = document.getElementById('lock');
+const sessionStatus = document.getElementById('session-status');
 const text = (tag, value, className) => {
   const node = document.createElement(tag); node.textContent = value;
   if (className) node.className = className; return node;
@@ -80,18 +85,71 @@ function selectDay(index){
   content.querySelectorAll('[role=tab]').forEach((node,i)=>{node.setAttribute('aria-selected',String(i===index));node.tabIndex=i===index?0:-1;});
   content.querySelectorAll('[role=tabpanel]').forEach((node,i)=>node.hidden=i!==index);
 }
+function setNotice(message='') { sessionStatus.textContent=message; sessionStatus.hidden=!message; }
+function setBusy(value, label='ひらいています…') {
+  loading=value;unlockButton.disabled=value;passwordInput.disabled=value;
+  if(value)unlockButton.textContent=label;
+  else unlockButton.replaceChildren(document.createTextNode('しおりをひらく '),text('span','↗'));
+}
+async function loadPayload() {
+  const response=await fetch('payload.json',{cache:'no-store'});
+  if(!response.ok)throw new Error('network');
+  return response.json();
+}
+async function decryptPayload(key,payload) {
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(payload.iv)},key,decode(payload.ciphertext));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+function openViewer(data,focus=true) {
+  render(data);opened=true;gate.hidden=true;itinerary.hidden=false;passwordInput.value='';
+  passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');
+  if(focus)content.focus();window.scrollTo(0,0);
+}
+function closeViewer() {
+  opened=false;content.replaceChildren();itinerary.hidden=true;gate.hidden=false;errorText.textContent='';passwordInput.value='';setNotice();window.scrollTo(0,0);
+}
+async function restoreRemembered() {
+  if(loading||opened)return;
+  setBusy(true,'ログイン状態を確認しています…');setNotice();
+  try {
+    const saved=await readRemembered();
+    if(!saved?.key)return;
+    if(!window.crypto?.subtle)throw new Error('unsupported');
+    const payload=await loadPayload();
+    if(saved.salt!==payload.salt||saved.iterations!==payload.iterations||saved.version!==payload.version) {
+      await forgetRemembered();return;
+    }
+    let data;
+    try { data=await decryptPayload(saved.key,payload); }
+    catch { await forgetRemembered();return; }
+    remembered=true;openViewer(data,false);
+  } catch(error) {
+    if(error.message==='network')errorText.textContent='予定を読み込めませんでした。通信を確認してページを開き直してください。';
+  } finally { setBusy(false); }
+}
 showPassword.addEventListener('click',()=>{const visible=passwordInput.type==='password';passwordInput.type=visible?'text':'password';showPassword.textContent=visible?'隠す':'表示';showPassword.setAttribute('aria-pressed',String(visible));});
 form.addEventListener('submit',async event=>{
-  event.preventDefault();errorText.textContent='';unlockButton.disabled=true;unlockButton.textContent='ひらいています…';
+  event.preventDefault();if(loading)return;errorText.textContent='';setBusy(true);setNotice();
   try{
     if(!window.crypto?.subtle)throw new Error('unsupported');
-    const response=await fetch('payload.json',{cache:'no-store'});if(!response.ok)throw new Error('network');const payload=await response.json();
+    const payload=await loadPayload();
     const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passwordInput.value),'PBKDF2',false,['deriveKey']);passwordInput.value='';
     const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:decode(payload.salt),iterations:payload.iterations},material,{name:'AES-GCM',length:256},false,['decrypt']);
-    const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(payload.iv)},key,decode(payload.ciphertext));
-    const data=JSON.parse(new TextDecoder().decode(plain));render(data);opened=true;gate.hidden=true;itinerary.hidden=false;passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');content.focus();window.scrollTo(0,0);
+    const data=await decryptPayload(key,payload);
+    let notice='';
+    try { await saveRemembered(key,payload);remembered=true; }
+    catch { remembered=false;notice='このブラウザーではログイン状態を保存できませんでした。次回はパスワードを入力してください。'; }
+    openViewer(data);setNotice(notice);
   }catch(error){passwordInput.value='';errorText.textContent=error.message==='network'?'読み込めませんでした。通信を確認してもう一度お試しください。':error.message==='unsupported'?'このブラウザーでは開けません。新しいブラウザーでお試しください。':'パスワードが違います。もう一度入力してください。';passwordInput.focus();}
-  finally{unlockButton.disabled=false;unlockButton.replaceChildren(document.createTextNode('しおりをひらく '),text('span','↗'));}
+  finally{setBusy(false);if(!opened)passwordInput.focus();}
 });
-document.getElementById('lock').addEventListener('click',()=>{opened=false;content.replaceChildren();itinerary.hidden=true;gate.hidden=false;errorText.textContent='';passwordInput.value='';passwordInput.focus();window.scrollTo(0,0);});
-window.addEventListener('pageshow',event=>{if(event.persisted&&opened)document.getElementById('lock').click();});
+lockButton.addEventListener('click',async()=>{
+  lockButton.disabled=true;
+  try {
+    if(remembered)await forgetRemembered();
+    remembered=false;closeViewer();passwordInput.focus();
+  } catch { setNotice('ログイン状態を解除できませんでした。もう一度お試しください。'); }
+  finally { lockButton.disabled=false; }
+});
+window.addEventListener('pageshow',event=>{if(event.persisted){closeViewer();void restoreRemembered();}});
+void restoreRemembered();

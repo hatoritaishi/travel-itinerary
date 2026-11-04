@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#234b49">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>旅のしおり</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">予定へ移動</a>
+  <main id="gate" class="gate">
+    <div class="gate-art" aria-hidden="true"><span class="sun"></span><span class="mountain m1"></span><span class="mountain m2"></span><span class="river"></span><span class="bridge"></span></div>
+    <section class="gate-card" aria-labelledby="gate-title">
+      <p class="eyebrow">A LITTLE JOURNEY</p>
+      <h1 id="gate-title">旅のしおり</h1>
+      <p class="gate-description">パスワードを入力して、<br>旅の予定をひらきましょう。</p>
+      <form id="unlock-form">
+        <label for="password">パスワード</label>
+        <div class="password-wrap">
+          <input id="password" type="password" inputmode="numeric" autocomplete="off" required aria-describedby="unlock-error" placeholder="パスワードを入力">
+          <button id="show-password" class="show-password" type="button" aria-pressed="false">表示</button>
+        </div>
+        <p id="unlock-error" class="error" role="alert"></p>
+        <button class="primary" id="unlock-button" type="submit">しおりをひらく <span aria-hidden="true">↗</span></button>
+      </form>
+      <p class="gate-foot">この画面では、旅程はまだ表示されません。</p>
+      <noscript>閲覧するにはJavaScriptを有効にしてください。</noscript>
+    </section>
+  </main>
+  <div id="itinerary" hidden>
+    <header class="site-header"><a class="brand" href="#content">旅のしおり<span>TRAVEL NOTE</span></a><button id="lock" class="quiet-button" type="button">閉じる</button></header>
+    <main id="content" tabindex="-1"></main>
+    <footer class="site-footer">旅の途中は、少し余白を。<span>時刻表の時刻と、観光の目安を分けて表示しています。</span></footer>
+  </div>
+</body>
+</html>

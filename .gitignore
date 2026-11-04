@@ -1,0 +1,5 @@
+node_modules/
+.env*
+*.plain.json
+*.log
+screenshots/

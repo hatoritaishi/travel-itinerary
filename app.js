@@ -54,8 +54,7 @@ function render(data) {
   const route = document.createElement('div'); route.className = 'route-strip'; route.setAttribute('aria-label','旅のルート');
   data.route.forEach((place, index) => { if (index) route.append(text('span', '→', 'arrow')); route.append(text('strong', place)); });
   intro.append(route);
-  const note = document.createElement('div'); note.className = 'hero-note'; note.append(text('strong', '3日目の主案'), text('span', data.mainRoute));
-  hero.append(intro, note); content.append(hero);
+  hero.append(intro); content.append(hero);
   const tabs = document.createElement('nav'); tabs.className = 'day-tabs'; tabs.setAttribute('role','tablist'); tabs.setAttribute('aria-label','日程を選ぶ');
   const panels = document.createElement('div');
   data.days.forEach((day, index) => {
@@ -74,7 +73,6 @@ function render(data) {
     const legend=document.createElement('div');legend.className='legend';
     for(const [value,cls] of [['時刻表確認済み',''],['観光・徒歩の目安','estimate']]){const legendItem=text('span',value,cls);const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');legendItem.prepend(dot);legend.append(legendItem);}panel.append(legend);
     const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach(item=>timeline.append(renderEvent(item)));panel.append(timeline);
-    if(day.notes?.length){const notes=document.createElement('aside');notes.className='notes';notes.append(text('h3','この日のメモ'));const ul=document.createElement('ul');day.notes.forEach(item=>ul.append(text('li',item)));notes.append(ul);panel.append(notes);}
     if(day.backup){const backup=document.createElement('details');backup.className='backup';backup.append(text('summary',day.backup.title),text('p',day.backup.description));for(const source of day.backup.sources){const p=document.createElement('p');p.append(sourceLink(source));backup.append(p);}panel.append(backup);}
     panels.append(panel);
   });

@@ -13,6 +13,12 @@ changes require another unlock. If storage is unavailable, viewing still works
 and the page reports that the login could not be remembered. No analytics, third-party scripts,
 account details, booking identifiers, payment details, or tracking are included.
 
+Spot explanations open in separate tabs using the `spot` query parameter.
+They are included in the encrypted payload and use the same viewing key.
+Sightseeing guides link to official websites; the station guide focuses on
+souvenirs and shops. Timeline times and alternate routes are independent of
+the guide content.
+
 A short numeric password is a convenience gate, not strong access control.
 Public encrypted payloads can be downloaded and subjected to offline guesses.
 Do not add confidential or identifying data to this viewer.

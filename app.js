@@ -24,12 +24,26 @@ function sourceLink(source) {
   const link = text('a', source.label); link.href = url.href;
   link.target = '_blank'; link.rel = 'noopener noreferrer'; return link;
 }
-function renderEvent(item, id) {
+function guideLink(id, label) {
+  const link = text('a', label);
+  const url = new URL(window.location.pathname, window.location.origin);
+  url.searchParams.set('spot', id);
+  link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+  return link;
+}
+function renderEvent(item, id, guides) {
   const li = document.createElement('li'); li.className = `event ${item.kind}`;
   const time = text(item.alternative ? 'button' : 'div', item.time, 'event-time');
   if (item.timeNote) time.append(text('small', item.timeNote));
   const body = document.createElement('div'); body.className = 'event-body';
-  body.append(text('p', item.label, 'event-label'), text('h3', item.title));
+  const heading = text('h3', item.title);
+  if (item.guideIds?.length === 1) {
+    const guide = guides[item.guideIds[0]];
+    const link = guideLink(item.guideIds[0], item.title); link.className = 'spot-title-link';
+    link.append(text('span', guide.kind === 'souvenir' ? 'おみやげ ↗' : '解説 ↗', 'guide-cue'));
+    heading.replaceChildren(link);
+  }
+  body.append(text('p', item.label, 'event-label'), heading);
   if (item.from) {
     const line = document.createElement('div'); line.className = 'transport-line';
     const from = text('div', item.from, 'transport-place'); from.append(text('b', item.depart));
@@ -38,6 +52,14 @@ function renderEvent(item, id) {
     line.append(from, arrow, to); body.append(line);
   }
   if (item.description) body.append(text('p', item.description, 'event-description'));
+  if (item.guideIds?.length > 1) {
+    const links = document.createElement('div'); links.className = 'spot-links';
+    for (const guideId of item.guideIds) {
+      const link = guideLink(guideId, `${guides[guideId].name}の解説 ↗`);
+      link.className = 'spot-link'; links.append(link);
+    }
+    body.append(links);
+  }
   if (item.source || item.detail) {
     const details = document.createElement('details');
     details.append(text('summary', item.source ? '時刻の根拠・乗車メモ' : '補足を見る'));
@@ -90,11 +112,41 @@ function render(data) {
     const heading=document.createElement('div');heading.className='day-head';const headingText=document.createElement('div');headingText.append(text('h2',day.title),text('p',day.subtitle));heading.append(headingText,text('span',`DAY 0${index+1}`,'day-count'));panel.append(heading);
     const legend=document.createElement('div');legend.className='legend';
     for(const [value,cls] of [['時刻表確認済み',''],['観光・徒歩の目安','estimate']]){const legendItem=text('span',value,cls);const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');legendItem.prepend(dot);legend.append(legendItem);}panel.append(legend);
-    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach((item,eventIndex)=>timeline.append(renderEvent(item,`alternative-${index}-${eventIndex}`)));panel.append(timeline);
+    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach((item,eventIndex)=>timeline.append(renderEvent(item,`alternative-${index}-${eventIndex}`,data.guides||{})));panel.append(timeline);
     panels.append(panel);
   });
   content.append(tabs,panels);
   const allSources=document.createElement('details');allSources.className='backup';allSources.append(text('summary','時刻表・施設の公式案内'));const list=document.createElement('ul');list.className='source-list';data.sources.forEach(source=>{const li=document.createElement('li');li.append(sourceLink(source));list.append(li);});allSources.append(list);content.append(allSources);
+}
+function renderGuide(data, id) {
+  content.replaceChildren();
+  const back = text('a', '← 旅のしおりへ'); back.href = window.location.pathname; back.className = 'guide-back'; content.append(back);
+  const guide = Object.hasOwn(data.guides || {}, id) ? data.guides[id] : null;
+  if (!guide) {
+    content.append(text('h1', 'この解説は見つかりませんでした。'), text('p', '旅のしおりからスポットを選んでください。')); return;
+  }
+  document.title = `${guide.name}｜旅のしおり`;
+  const article = document.createElement('article'); article.className = 'spot-guide';
+  const header = document.createElement('header'); header.className = 'guide-header';
+  header.append(text('p', guide.area, 'eyebrow'), text('h1', guide.name), text('p', guide.lead, 'guide-lead'));
+  article.append(header);
+  for (const section of guide.sections) {
+    const block = document.createElement('section'); block.className = 'guide-section';
+    block.append(text('h2', section.heading));
+    if (section.body) block.append(text('p', section.body));
+    if (section.items) {
+      const list = document.createElement('ul');
+      section.items.forEach(item => list.append(text('li', item))); block.append(list);
+    }
+    article.append(block);
+  }
+  if (guide.official) {
+    const links = document.createElement('div'); links.className = 'guide-official';
+    const link = sourceLink({label:'公式ホームページを開く ↗',url:guide.official.url});
+    link.className = 'official-link'; links.append(link, text('p', guide.official.label)); article.append(links);
+  }
+  article.append(text('p', `案内確認：${data.guidesCheckedOn}`, 'guide-checked'));
+  content.append(article);
 }
 function selectDay(index){
   content.querySelectorAll('[role=tab]').forEach((node,i)=>{node.setAttribute('aria-selected',String(i===index));node.tabIndex=i===index?0:-1;});
@@ -116,7 +168,9 @@ async function decryptPayload(key,payload) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 function openViewer(data,focus=true) {
-  render(data);opened=true;gate.hidden=true;itinerary.hidden=false;passwordInput.value='';
+  const guideId = new URL(window.location.href).searchParams.get('spot');
+  if (guideId) renderGuide(data, guideId); else render(data);
+  opened=true;gate.hidden=true;itinerary.hidden=false;passwordInput.value='';
   passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');
   if(focus)content.focus();window.scrollTo(0,0);
 }

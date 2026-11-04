@@ -24,9 +24,9 @@ function sourceLink(source) {
   const link = text('a', source.label); link.href = url.href;
   link.target = '_blank'; link.rel = 'noopener noreferrer'; return link;
 }
-function renderEvent(item) {
+function renderEvent(item, id) {
   const li = document.createElement('li'); li.className = `event ${item.kind}`;
-  const time = text('div', item.time, 'event-time');
+  const time = text(item.alternative ? 'button' : 'div', item.time, 'event-time');
   if (item.timeNote) time.append(text('small', item.timeNote));
   const body = document.createElement('div'); body.className = 'event-body';
   body.append(text('p', item.label, 'event-label'), text('h3', item.title));
@@ -44,6 +44,24 @@ function renderEvent(item) {
     if (item.detail) details.append(text('p', item.detail));
     if (item.source) { const p = document.createElement('p'); p.append(sourceLink(item.source)); details.append(p); }
     body.append(details);
+  }
+  if (item.alternative) {
+    time.type = 'button'; time.classList.add('time-toggle');
+    time.setAttribute('aria-expanded', 'false'); time.setAttribute('aria-controls', id);
+    time.setAttribute('aria-label', `${item.time.replaceAll('\n', '〜')}の別経路`);
+    const cue = text('small', '別経路 ▾', 'time-toggle-cue'); time.append(cue);
+    const alternative = document.createElement('section'); alternative.id = id;
+    alternative.className = 'alternative-route'; alternative.hidden = true;
+    alternative.append(text('h4', item.alternative.title), text('p', item.alternative.description));
+    for (const source of item.alternative.sources || []) {
+      const p = document.createElement('p'); p.append(sourceLink(source)); alternative.append(p);
+    }
+    time.addEventListener('click', () => {
+      alternative.hidden = !alternative.hidden;
+      time.setAttribute('aria-expanded', String(!alternative.hidden));
+      cue.textContent = alternative.hidden ? '別経路 ▾' : '閉じる ▴';
+    });
+    body.append(alternative);
   }
   li.append(time, body); return li;
 }
@@ -72,8 +90,7 @@ function render(data) {
     const heading=document.createElement('div');heading.className='day-head';const headingText=document.createElement('div');headingText.append(text('h2',day.title),text('p',day.subtitle));heading.append(headingText,text('span',`DAY 0${index+1}`,'day-count'));panel.append(heading);
     const legend=document.createElement('div');legend.className='legend';
     for(const [value,cls] of [['時刻表確認済み',''],['観光・徒歩の目安','estimate']]){const legendItem=text('span',value,cls);const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');legendItem.prepend(dot);legend.append(legendItem);}panel.append(legend);
-    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach(item=>timeline.append(renderEvent(item)));panel.append(timeline);
-    if(day.backup){const backup=document.createElement('details');backup.className='backup';backup.append(text('summary',day.backup.title),text('p',day.backup.description));for(const source of day.backup.sources){const p=document.createElement('p');p.append(sourceLink(source));backup.append(p);}panel.append(backup);}
+    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach((item,eventIndex)=>timeline.append(renderEvent(item,`alternative-${index}-${eventIndex}`)));panel.append(timeline);
     panels.append(panel);
   });
   content.append(tabs,panels);

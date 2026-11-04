@@ -16,7 +16,7 @@
 .spot-link:hover,.spot-title-link:hover{color:#004477;border-color:#075d9b}
 .header-actions{display:flex;align-items:center;gap:.65rem}.header-town-link{color:#075d9b;text-decoration:none;font-weight:600}
 .destination-guides{margin:0 0 2.2rem;scroll-margin-top:1rem}.destination-guides-title{font-size:1rem;margin:0 0 .8rem;font-weight:600}
-.destination-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.85rem}
+.destination-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.85rem}
 .destination-card{display:flex;flex-direction:column;gap:.65rem;padding:1.15rem;border:1px solid #b8d0e5;border-radius:9px;background:var(--white);color:var(--ink);text-decoration:none;box-shadow:0 2px 0 #075d9b0d}
 .destination-card:hover{border-color:#075d9b;background:#eff5fa}.destination-name{font-family:"Yu Mincho",serif;font-size:1.5rem;line-height:1.2;color:#075d9b}.destination-summary{font-size:.8rem;color:var(--muted);line-height:1.7}.destination-cta{margin-top:auto;font-size:.8rem;color:#075d9b;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .city-switcher{max-width:780px;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:1rem;margin:0 auto 1.8rem;border:1px solid #b8d0e5;border-radius:8px;background:#edf4fa;scroll-margin-top:5rem}.city-switch-label{font-size:.8rem;font-weight:600;color:var(--muted);margin-right:.3rem}.city-switch-link{padding:.45rem .7rem;color:#075d9b;font-size:.85rem;text-underline-offset:3px;border-radius:5px}.city-switch-link[aria-current=page]{color:#fff;background:#075d9b;text-decoration:none}

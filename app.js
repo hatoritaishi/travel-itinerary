@@ -37,20 +37,20 @@ function guideLink(id, label, dayNumber) {
 }
 function renderDestinationGuides(data) {
   const section=document.createElement('section');section.id='destination-guides';section.className='destination-guides';section.setAttribute('aria-labelledby','destination-guides-title');
-  section.append(text('h2','旅先のまち案内','destination-guides-title'));
+  section.append(text('h2','旅先ガイド','destination-guides-title'));
   const cards=document.createElement('div');cards.className='destination-cards';
   for(const id of data.destinationGuideIds||[]) {
     const guide=data.guides[id];const card=guideLink(id,'',returnDay()||1);card.className='destination-card';
-    card.append(text('span',guide.cityName,'destination-name'),text('span',guide.summary,'destination-summary'),text('span','写真とまちの解説を見る ↗','destination-cta'));
+    card.append(text('span',guide.cardName||guide.cityName,'destination-name'),text('span',guide.summary,'destination-summary'),text('span','写真と解説を見る ↗','destination-cta'));
     cards.append(card);
   }
   section.append(cards);return section;
 }
 function renderCitySwitcher(data,currentId) {
-  const nav=document.createElement('nav');nav.id='destination-guides';nav.className='city-switcher';nav.setAttribute('aria-label','まち案内を切り替える');
-  nav.append(text('span','まち案内','city-switch-label'));
+  const nav=document.createElement('nav');nav.id='destination-guides';nav.className='city-switcher';nav.setAttribute('aria-label','旅先ガイドを切り替える');
+  nav.append(text('span','旅先ガイド','city-switch-label'));
   for(const id of data.destinationGuideIds||[]) {
-    const link=guideLink(id,`${data.guides[id].cityName}のまち案内`,returnDay());link.target='_self';link.className='city-switch-link';
+    const link=guideLink(id,data.guides[id].navigationLabel||data.guides[id].name,returnDay());link.target='_self';link.className='city-switch-link';
     if(id===currentId)link.setAttribute('aria-current','page');nav.append(link);
   }
   return nav;

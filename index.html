@@ -6,14 +6,17 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#234b49">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>旅のしおり</title>
-  <link rel="stylesheet" href="styles.css?v=spot-guides-4">
-  <script type="module" src="app.js?v=spot-guides-4"></script>
+  <link rel="stylesheet" href="styles.css?v=photo-guides-6">
+  <script type="module" src="app.js?v=photo-guides-6"></script>
 </head>
 <body>
   <a class="skip" href="#content">予定へ移動</a>
-  <main id="gate" class="gate">
+  <section id="opening" class="opening" aria-label="読み込み中">
+    <div><p class="eyebrow">TRAVEL NOTE</p><p id="opening-message" role="status">しおりをひらいています…</p><button id="retry-opening" class="quiet-button" type="button" hidden>もう一度読み込む</button><noscript>閲覧するにはJavaScriptを有効にしてください。</noscript></div>
+  </section>
+  <main id="gate" class="gate" hidden>
     <div class="gate-art" aria-hidden="true"><span class="sun"></span><span class="mountain m1"></span><span class="mountain m2"></span><span class="river"></span><span class="bridge"></span></div>
     <section class="gate-card" aria-labelledby="gate-title">
       <p class="eyebrow">A LITTLE JOURNEY</p>

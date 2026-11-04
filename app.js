@@ -1,6 +1,9 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
 const gate = document.getElementById('gate');
+const opening = document.getElementById('opening');
+const openingMessage = document.getElementById('opening-message');
+const retryOpening = document.getElementById('retry-opening');
 const content = document.getElementById('content');
 const itinerary = document.getElementById('itinerary');
 const form = document.getElementById('unlock-form');
@@ -37,9 +40,9 @@ function renderEvent(item, id, guides) {
   if (item.timeNote) time.append(text('small', item.timeNote));
   const body = document.createElement('div'); body.className = 'event-body';
   const heading = text('h3', item.title);
-  if (item.guideIds?.length === 1) {
+  if (item.guideIds?.length) {
     const guide = guides[item.guideIds[0]];
-    const link = guideLink(item.guideIds[0], item.title); link.className = 'spot-title-link';
+    const link = guideLink(item.guideIds.join(','), item.title); link.className = 'spot-title-link';
     link.append(text('span', guide.kind === 'souvenir' ? 'おみやげ ↗' : '解説 ↗', 'guide-cue'));
     heading.replaceChildren(link);
   }
@@ -52,14 +55,6 @@ function renderEvent(item, id, guides) {
     line.append(from, arrow, to); body.append(line);
   }
   if (item.description) body.append(text('p', item.description, 'event-description'));
-  if (item.guideIds?.length > 1) {
-    const links = document.createElement('div'); links.className = 'spot-links';
-    for (const guideId of item.guideIds) {
-      const link = guideLink(guideId, `${guides[guideId].name}の解説 ↗`);
-      link.className = 'spot-link'; links.append(link);
-    }
-    body.append(links);
-  }
   if (item.source || item.detail) {
     const details = document.createElement('details');
     details.append(text('summary', item.source ? '時刻の根拠・乗車メモ' : '補足を見る'));
@@ -121,18 +116,43 @@ function render(data) {
 function renderGuide(data, id) {
   content.replaceChildren();
   const back = text('a', '← 旅のしおりへ'); back.href = window.location.pathname; back.className = 'guide-back'; content.append(back);
-  const guide = Object.hasOwn(data.guides || {}, id) ? data.guides[id] : null;
-  if (!guide) {
+  const ids = [...new Set(id.split(','))];
+  if (!ids.length || ids.some(guideId => !Object.hasOwn(data.guides || {}, guideId))) {
     content.append(text('h1', 'この解説は見つかりませんでした。'), text('p', '旅のしおりからスポットを選んでください。')); return;
   }
-  document.title = `${guide.name}｜旅のしおり`;
+  const guides = ids.map(guideId => data.guides[guideId]);
+  const grouped = guides.length > 1;
+  document.title = `${guides.map(guide=>guide.name).join('・')}｜旅のしおり`;
+  if (grouped) {
+    const group = document.createElement('header'); group.className = 'guide-group-header spot-guide';
+    group.append(text('p','SPOT GUIDE','eyebrow'),text('h1',guides.map(guide=>guide.name).join('・')));
+    const nav = document.createElement('nav'); nav.className = 'spot-links';
+    guides.forEach((guide,index)=>{const link=text('a',guide.name,'spot-link');link.href=`#guide-${ids[index]}`;nav.append(link);});
+    group.append(nav); content.append(group);
+  }
+  guides.forEach((guide,index)=>renderGuideArticle(guide,ids[index],grouped,data.guidesCheckedOn));
+}
+function renderGuideArticle(guide,id,grouped,checkedOn) {
   const article = document.createElement('article'); article.className = 'spot-guide';
+  article.id = `guide-${id}`;
   const header = document.createElement('header'); header.className = 'guide-header';
-  header.append(text('p', guide.area, 'eyebrow'), text('h1', guide.name), text('p', guide.lead, 'guide-lead'));
+  header.append(text('p', guide.area, 'eyebrow'), text(grouped?'h2':'h1', guide.name), text('p', guide.lead, 'guide-lead'));
   article.append(header);
+  if (guide.photo) {
+    const figure = document.createElement('figure'); figure.className = 'guide-figure';
+    const image = document.createElement('img'); image.className = 'guide-photo';
+    image.src = guide.photo.url; image.alt = guide.photo.alt; image.loading = 'lazy'; image.decoding = 'async'; image.referrerPolicy = 'no-referrer';
+    const caption = document.createElement('figcaption');
+    caption.append(sourceLink({label:guide.photo.credit,url:guide.photo.source}));
+    if (guide.photo.license) {
+      caption.append(document.createTextNode(' / '));
+      caption.append(guide.photo.licenseUrl ? sourceLink({label:guide.photo.license,url:guide.photo.licenseUrl}) : document.createTextNode(guide.photo.license));
+    }
+    figure.append(image,caption); article.append(figure);
+  }
   for (const section of guide.sections) {
     const block = document.createElement('section'); block.className = 'guide-section';
-    block.append(text('h2', section.heading));
+    block.append(text(grouped?'h3':'h2', section.heading));
     if (section.body) block.append(text('p', section.body));
     if (section.items) {
       const list = document.createElement('ul');
@@ -145,7 +165,7 @@ function renderGuide(data, id) {
     const link = sourceLink({label:'公式ホームページを開く ↗',url:guide.official.url});
     link.className = 'official-link'; links.append(link, text('p', guide.official.label)); article.append(links);
   }
-  article.append(text('p', `案内確認：${data.guidesCheckedOn}`, 'guide-checked'));
+  article.append(text('p', `案内確認：${checkedOn}`, 'guide-checked'));
   content.append(article);
 }
 function selectDay(index){
@@ -170,32 +190,40 @@ async function decryptPayload(key,payload) {
 function openViewer(data,focus=true) {
   const guideId = new URL(window.location.href).searchParams.get('spot');
   if (guideId) renderGuide(data, guideId); else render(data);
-  opened=true;gate.hidden=true;itinerary.hidden=false;passwordInput.value='';
+  opened=true;gate.hidden=true;opening.hidden=true;itinerary.hidden=false;passwordInput.value='';
   passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');
   if(focus)content.focus();window.scrollTo(0,0);
 }
-function closeViewer() {
-  opened=false;content.replaceChildren();itinerary.hidden=true;gate.hidden=false;errorText.textContent='';passwordInput.value='';setNotice();window.scrollTo(0,0);
+function closeViewer(showGate=true) {
+  opened=false;content.replaceChildren();itinerary.hidden=true;gate.hidden=!showGate;opening.hidden=showGate;errorText.textContent='';passwordInput.value='';setNotice();window.scrollTo(0,0);
 }
 async function restoreRemembered() {
   if(loading||opened)return;
+  gate.hidden=true;opening.hidden=false;retryOpening.hidden=true;openingMessage.textContent='しおりをひらいています…';
+  let needsUnlock=false;
   setBusy(true,'ログイン状態を確認しています…');setNotice();
   try {
-    const saved=await readRemembered();
-    if(!saved?.key)return;
+    let saved;
+    try { saved=await readRemembered(); }
+    catch { needsUnlock=true;return; }
+    if(!saved?.key){needsUnlock=true;return;}
     if(!window.crypto?.subtle)throw new Error('unsupported');
     const payload=await loadPayload();
     if(saved.salt!==payload.salt||saved.iterations!==payload.iterations||saved.version!==payload.version) {
-      await forgetRemembered();return;
+      needsUnlock=true;await forgetRemembered();return;
     }
     let data;
     try { data=await decryptPayload(saved.key,payload); }
-    catch { await forgetRemembered();return; }
+    catch { needsUnlock=true;await forgetRemembered();return; }
     remembered=true;openViewer(data,false);
   } catch(error) {
-    if(error.message==='network')errorText.textContent='予定を読み込めませんでした。通信を確認してページを開き直してください。';
-  } finally { setBusy(false); }
+    openingMessage.textContent='しおりを読み込めませんでした。通信を確認して、もう一度お試しください。';retryOpening.hidden=false;
+  } finally {
+    setBusy(false);
+    if(needsUnlock){opening.hidden=true;gate.hidden=false;}
+  }
 }
+retryOpening.addEventListener('click',()=>{void restoreRemembered();});
 showPassword.addEventListener('click',()=>{const visible=passwordInput.type==='password';passwordInput.type=visible?'text':'password';showPassword.textContent=visible?'隠す':'表示';showPassword.setAttribute('aria-pressed',String(visible));});
 form.addEventListener('submit',async event=>{
   event.preventDefault();if(loading)return;errorText.textContent='';setBusy(true);setNotice();
@@ -220,5 +248,5 @@ lockButton.addEventListener('click',async()=>{
   } catch { setNotice('ログイン状態を解除できませんでした。もう一度お試しください。'); }
   finally { lockButton.disabled=false; }
 });
-window.addEventListener('pageshow',event=>{if(event.persisted){closeViewer();void restoreRemembered();}});
+window.addEventListener('pageshow',event=>{if(event.persisted){closeViewer(false);void restoreRemembered();}});
 void restoreRemembered();

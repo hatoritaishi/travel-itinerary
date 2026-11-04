@@ -22,6 +22,8 @@ cards above the day tabs, footer navigation, and a switcher between guides.
 Blue underlined headings identify guide links.
 On phones, destination links and guide switches use a single compact row.
 Narrower screens can scroll the row horizontally instead of stacking the links.
+Matching day buttons below the itinerary select a day, synchronize the upper
+tabs, and return the reader to the day selector at the top.
 They are included in the encrypted payload and use the same viewing key.
 Sightseeing and hotel headings link directly to illustrated guides, including
 grouped places. Guides link to official websites; the station guide focuses on

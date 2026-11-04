@@ -136,6 +136,21 @@ function render(data) {
   });
   content.append(tabs,panels);
   const allSources=document.createElement('details');allSources.className='backup';allSources.append(text('summary','時刻表・施設の公式案内'));const list=document.createElement('ul');list.className='source-list';data.sources.forEach(source=>{const li=document.createElement('li');li.append(sourceLink(source));list.append(li);});allSources.append(list);content.append(allSources);
+  content.append(renderDayJump(data.days));
+}
+function renderDayJump(days) {
+  const nav=document.createElement('nav');nav.className='day-tabs day-jumps';nav.setAttribute('aria-label','日程を選んで上へ移動');
+  days.forEach((day,index)=>{
+    const button=document.createElement('button');button.type='button';button.className='day-tab day-jump';
+    button.setAttribute('aria-pressed',String(index===0));button.setAttribute('aria-label',`${day.date} ${day.shortTitle}の上の日程へ移動`);
+    button.append(text('span',day.date),text('strong',day.shortTitle));
+    button.addEventListener('click',()=>{
+      selectDay(index);content.querySelector('[role=tablist]').scrollIntoView({block:'start',behavior:'auto'});
+      content.querySelector(`#tab-${index}`).focus({preventScroll:true});
+    });
+    nav.append(button);
+  });
+  return nav;
 }
 function returnDay() {
   const day=Number(new URL(window.location.href).searchParams.get('day'));
@@ -211,6 +226,7 @@ function renderGuideArticle(guide,id,grouped,checkedOn) {
 function selectDay(index){
   content.querySelectorAll('[role=tab]').forEach((node,i)=>{node.setAttribute('aria-selected',String(i===index));node.tabIndex=i===index?0:-1;});
   content.querySelectorAll('[role=tabpanel]').forEach((node,i)=>node.hidden=i!==index);
+  content.querySelectorAll('.day-jump').forEach((node,i)=>node.setAttribute('aria-pressed',String(i===index)));
   content.querySelectorAll('.destination-card').forEach(link=>{const url=new URL(link.href);url.searchParams.set('day',index+1);link.href=url.href;});
 }
 function setNotice(message='') { sessionStatus.textContent=message; sessionStatus.hidden=!message; }

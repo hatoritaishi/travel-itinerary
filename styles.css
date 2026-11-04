@@ -59,3 +59,5 @@
 .guide-header.mini-maro-host>.mini-maro-home{grid-column:2;grid-row:1/4;align-self:center}
 @media(min-width:1300px){.mini-maro-home{position:fixed;left:calc(50% + 558px);bottom:24px;margin:0}.guide-header.mini-maro-host{display:block}}
 @media print{.mini-maro,.mini-maro-home{display:none!important}.guide-header.mini-maro-host{display:block}}
+.day-tabs[role=tablist]{scroll-margin-top:1rem}.day-jumps{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line);border-bottom:0}
+.day-jump[aria-pressed=true]{background:var(--green);color:#d7e4d8}.day-jump[aria-pressed=true] strong{color:var(--white)}

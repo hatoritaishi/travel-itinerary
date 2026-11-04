@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#234b49">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>旅のしおり</title>
-  <link rel="stylesheet" href="styles.css?v=destination-guides-9">
-  <script type="module" src="app.js?v=destination-guides-9"></script>
+  <link rel="stylesheet" href="styles.css?v=footer-navigation-11">
+  <script type="module" src="app.js?v=footer-navigation-11"></script>
 </head>
 <body>
   <a class="skip" href="#content">予定へ移動</a>
@@ -36,10 +36,14 @@
     </section>
   </main>
   <div id="itinerary" hidden>
-    <header class="site-header"><a class="brand" href="#content">旅のしおり<span>TRAVEL NOTE</span></a><nav class="header-actions" aria-label="ページ操作"><a class="quiet-button header-town-link" href="#destination-guides">旅先ガイド</a><button id="lock" class="quiet-button" type="button">ログイン解除</button></nav></header>
     <p id="session-status" class="session-status" role="status" hidden></p>
     <main id="content" tabindex="-1"></main>
-    <footer class="site-footer">旅の途中は、少し余白を。<span>時刻表の時刻と、観光の目安を分けて表示しています。</span></footer>
+    <footer class="site-footer">
+      <nav class="footer-actions" aria-label="ページ操作">
+        <a class="brand footer-action" href="#content">旅のしおり</a>
+        <a class="footer-action header-town-link" href="#destination-guides">旅先ガイド</a>
+      </nav>
+    </footer>
   </div>
 </body>
 </html>

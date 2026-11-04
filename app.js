@@ -12,9 +12,7 @@ const unlockButton = document.getElementById('unlock-button');
 const errorText = document.getElementById('unlock-error');
 const showPassword = document.getElementById('show-password');
 let opened = false;
-let remembered = false;
 let loading = false;
-const lockButton = document.getElementById('lock');
 const sessionStatus = document.getElementById('session-status');
 const text = (tag, value, className) => {
   const node = document.createElement(tag); node.textContent = value;
@@ -254,7 +252,7 @@ async function restoreRemembered() {
     let data;
     try { data=await decryptPayload(saved.key,payload); }
     catch { needsUnlock=true;await forgetRemembered();return; }
-    remembered=true;openViewer(data,false);
+    openViewer(data,false);
   } catch(error) {
     openingMessage.textContent='しおりを読み込めませんでした。通信を確認して、もう一度お試しください。';retryOpening.hidden=false;
   } finally {
@@ -273,19 +271,11 @@ form.addEventListener('submit',async event=>{
     const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:decode(payload.salt),iterations:payload.iterations},material,{name:'AES-GCM',length:256},false,['decrypt']);
     const data=await decryptPayload(key,payload);
     let notice='';
-    try { await saveRemembered(key,payload);remembered=true; }
-    catch { remembered=false;notice='このブラウザーではログイン状態を保存できませんでした。次回はパスワードを入力してください。'; }
+    try { await saveRemembered(key,payload); }
+    catch { notice='このブラウザーではログイン状態を保存できませんでした。次回はパスワードを入力してください。'; }
     openViewer(data);setNotice(notice);
   }catch(error){passwordInput.value='';errorText.textContent=error.message==='network'?'読み込めませんでした。通信を確認してもう一度お試しください。':error.message==='unsupported'?'このブラウザーでは開けません。新しいブラウザーでお試しください。':'パスワードが違います。もう一度入力してください。';passwordInput.focus();}
   finally{setBusy(false);if(!opened)passwordInput.focus();}
-});
-lockButton.addEventListener('click',async()=>{
-  lockButton.disabled=true;
-  try {
-    if(remembered)await forgetRemembered();
-    remembered=false;closeViewer();passwordInput.focus();
-  } catch { setNotice('ログイン状態を解除できませんでした。もう一度お試しください。'); }
-  finally { lockButton.disabled=false; }
 });
 window.addEventListener('pageshow',event=>{if(event.persisted){closeViewer(false);void restoreRemembered();}});
 void restoreRemembered();

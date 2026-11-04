@@ -15,6 +15,7 @@
 .spot-link{display:inline-block;border:1px solid #b8d0e5;border-radius:6px;padding:.45rem .65rem;font-size:.78rem;color:#075d9b;text-decoration:underline;text-underline-offset:3px;background:var(--white)}
 .spot-link:hover,.spot-title-link:hover{color:#004477;border-color:#075d9b}
 .header-actions{display:flex;align-items:center;gap:.65rem}.header-town-link{color:#075d9b;text-decoration:none;font-weight:600}
+.site-footer{font-family:inherit}.footer-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.footer-action{display:flex;align-items:center;justify-content:center;min-height:48px;padding:.65rem 1rem;border:1px solid #b8d0e5;border-radius:7px;background:var(--white);color:#075d9b;font:600 .9rem "Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;letter-spacing:normal;text-decoration:none}.footer-action:hover{border-color:#075d9b;background:#edf4fa}
 .destination-guides{margin:0 0 2.2rem;scroll-margin-top:1rem}.destination-guides-title{font-size:1rem;margin:0 0 .8rem;font-weight:600}
 .destination-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.85rem}
 .destination-card{display:flex;flex-direction:column;gap:.65rem;padding:1.15rem;border:1px solid #b8d0e5;border-radius:9px;background:var(--white);color:var(--ink);text-decoration:none;box-shadow:0 2px 0 #075d9b0d}

@@ -1,6 +1,7 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
 import { createMiniMaro } from './mini-maro.js?v=appearance-19';
+import { eventAnchor, visitedPlaces, visitTime, timelineUrl, timelineTarget } from './map-navigation.js?v=maps-21';
 const miniMaro = createMiniMaro();
 const gate = document.getElementById('gate');
 const opening = document.getElementById('opening');
@@ -58,8 +59,9 @@ function renderCitySwitcher(data,currentId) {
   }
   return nav;
 }
-function renderEvent(item, id, guides, dayNumber) {
+function renderEvent(item, id, guides, dayNumber, eventIndex) {
   const li = document.createElement('li'); li.className = `event ${item.kind}`;
+  li.id=eventAnchor(dayNumber,eventIndex);li.tabIndex=-1;
   const time = text(item.alternative ? 'button' : 'div', item.time, 'event-time');
   if (item.timeNote) time.append(text('small', item.timeNote));
   const body = document.createElement('div'); body.className = 'event-body';
@@ -67,7 +69,7 @@ function renderEvent(item, id, guides, dayNumber) {
   if (item.guideIds?.length) {
     const guide = guides[item.guideIds[0]];
     const link = guideLink(item.guideIds.join(','), item.title, dayNumber); link.className = 'spot-title-link';
-    link.append(text('span', guide.kind === 'souvenir' ? 'おみやげ ↗' : '解説 ↗', 'guide-cue'));
+    link.append(text('span', guide.kind === 'souvenir' ? 'おみやげを見る ↗' : '写真と説明を見る ↗', 'guide-cue'));
     heading.replaceChildren(link);
   }
   body.append(text('p', item.label, 'event-label'), heading);
@@ -108,6 +110,7 @@ function renderEvent(item, id, guides, dayNumber) {
 }
 function render(data) {
   content.replaceChildren();
+  const tools=document.createElement('nav');tools.className='trip-tools';tools.setAttribute('aria-label','地図から予定を見る');tools.append(mapDirectoryLink());content.append(tools);
   const hero = document.createElement('section'); hero.className = 'hero';
   const intro = document.createElement('div'); intro.append(text('p', data.kicker, 'eyebrow'), text('h1', data.title), text('p', data.subtitle, 'hero-sub'));
   const route = document.createElement('div'); route.className = 'route-strip'; route.setAttribute('aria-label','旅のルート');
@@ -119,7 +122,7 @@ function render(data) {
   data.days.forEach((day, index) => {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'day-tab'; button.id = `tab-${index}`;
     button.setAttribute('role','tab'); button.setAttribute('aria-controls',`day-${index}`); button.setAttribute('aria-selected', String(index===0)); button.tabIndex=index===0?0:-1;
-    button.append(text('span', day.date), text('strong', day.shortTitle));
+    button.append(text('span',`${index+1}日目`,'day-number'),text('span',day.date.replace('月','/').replace('日','')),text('strong',day.shortTitle));
     button.addEventListener('click',()=>selectDay(index));
     button.addEventListener('keydown', event => {
       let next; if(event.key==='ArrowRight')next=(index+1)%data.days.length; if(event.key==='ArrowLeft')next=(index+data.days.length-1)%data.days.length;
@@ -131,7 +134,7 @@ function render(data) {
     const heading=document.createElement('div');heading.className='day-head';const headingText=document.createElement('div');headingText.append(text('h2',day.title),text('p',day.subtitle));heading.append(headingText,text('span',`DAY 0${index+1}`,'day-count'));panel.append(heading);
     const legend=document.createElement('div');legend.className='legend';
     for(const [value,cls] of [['時刻表確認済み',''],['観光・徒歩の目安','estimate']]){const legendItem=text('span',value,cls);const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');legendItem.prepend(dot);legend.append(legendItem);}panel.append(legend);
-    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach((item,eventIndex)=>timeline.append(renderEvent(item,`alternative-${index}-${eventIndex}`,data.guides||{},index+1)));panel.append(timeline);
+    const timeline=document.createElement('ol');timeline.className='timeline';day.events.forEach((item,eventIndex)=>timeline.append(renderEvent(item,`alternative-${index}-${eventIndex}`,data.guides||{},index+1,eventIndex)));panel.append(timeline);
     panels.append(panel);
   });
   content.append(tabs,panels);
@@ -143,7 +146,7 @@ function renderDayJump(days) {
   days.forEach((day,index)=>{
     const button=document.createElement('button');button.type='button';button.className='day-tab day-jump';
     button.setAttribute('aria-pressed',String(index===0));button.setAttribute('aria-label',`${day.date} ${day.shortTitle}の上の日程へ移動`);
-    button.append(text('span',day.date),text('strong',day.shortTitle));
+    button.append(text('span',`${index+1}日目`,'day-number'),text('span',day.date.replace('月','/').replace('日','')),text('strong',day.shortTitle));
     button.addEventListener('click',()=>{
       selectDay(index);content.querySelector('[role=tablist]').scrollIntoView({block:'start',behavior:'auto'});
       content.querySelector(`#tab-${index}`).focus({preventScroll:true});
@@ -163,12 +166,39 @@ function itineraryUrl() {
 }
 function guideReturnLink() {
   const day=returnDay();
-  const back=text('a',day?`← ${day}日目の旅程に戻る`:'← 旅程に戻る','guide-return');
+  const back=text('a',day?`← ${day}日目のしおりに戻る`:'← しおりに戻る','guide-return');
   back.href=itineraryUrl();return back;
+}
+function mapDirectoryLink() {
+  const url=new URL(window.location.pathname,window.location.origin);
+  url.searchParams.set('maps','1');url.searchParams.set('day',returnDay()||1);
+  const link=text('a','地図を開く','map-directory-link');link.href=url.href;return link;
+}
+function renderMapDirectory(data) {
+  content.replaceChildren();document.title='訪問先の地図｜旅のしおり';
+  const navigation=document.createElement('nav');navigation.className='guide-navigation map-navigation';navigation.setAttribute('aria-label','地図一覧の操作');navigation.append(guideReturnLink());
+  const days=document.createElement('div');days.className='map-day-links';
+  data.days.forEach((day,index)=>{const link=text('a',`${index+1}日目`,'spot-link');link.href=`#map-day-${index+1}`;link.setAttribute('aria-label',`${index+1}日目 ${day.date}の地図`);days.append(link);});
+  navigation.append(days);content.append(navigation);
+  const header=document.createElement('header');header.className='guide-header map-directory-header';
+  header.append(text('h1','訪問先の地図'),text('p','青い見出しを押すと、その時間の予定が開きます。','guide-lead'));content.append(header);
+  const places=visitedPlaces(data);
+  data.days.forEach((day,index)=>{
+    const section=document.createElement('section');section.className='map-day';section.id=`map-day-${index+1}`;
+    const heading=text('h2',`${index+1}日目　${day.date}`);heading.id=`map-day-title-${index+1}`;section.setAttribute('aria-labelledby',heading.id);section.append(heading);
+    for(const place of places.filter(place=>place.dayNumber===index+1)){
+      const card=document.createElement('article');card.className='map-list-card';card.id=`place-${place.guideId}`;
+      const title=text('h3','','map-card-heading'),link=text('a','','map-timeline-link');link.href=timelineUrl(itineraryUrl(),place);
+      link.append(text('span',`${place.dayNumber}日目　${visitTime(place.time)}`,'map-visit-time'),text('span',place.guide.name,'map-spot-title'),text('span','この時間の予定を見る →','map-timeline-cue'));title.append(link);card.append(title);
+      const body=document.createElement('div');body.className='map-card-body';body.append(text('p',`${place.label} · ${place.eventTitle}`,'map-event-context'));appendMapContent(body,place.guide.map);card.append(body);section.append(card);
+    }
+    content.append(section);
+  });
+  const bottom=document.createElement('div');bottom.className='guide-return-bottom';bottom.append(guideReturnLink());content.append(bottom);
 }
 function renderGuide(data, id) {
   content.replaceChildren();
-  const navigation=document.createElement('nav');navigation.className='guide-navigation';navigation.setAttribute('aria-label','旅程へ戻る');navigation.append(guideReturnLink());content.append(navigation,renderCitySwitcher(data,id));
+  const navigation=document.createElement('nav');navigation.className='guide-navigation';navigation.setAttribute('aria-label','しおりと地図へ移動');navigation.append(guideReturnLink(),mapDirectoryLink());content.append(navigation,renderCitySwitcher(data,id));
   const ids = [...new Set(id.split(','))];
   if (!ids.length || ids.some(guideId => !Object.hasOwn(data.guides || {}, guideId))) {
     content.append(text('h1', 'この解説は見つかりませんでした。'), text('p', '旅のしおりからスポットを選んでください。')); return;
@@ -245,22 +275,25 @@ function renderProducts(products,grouped) {
   return list;
 }
 function renderPlaceMap(map,id,grouped) {
-  const url=new URL(map.embed);
-  if(url.origin!=='https://map.yahoo.co.jp'||url.pathname!=='/embedmap/V3/embedmap')throw new Error('Invalid map URL');
   const block=document.createElement('section');block.className='guide-section guide-map';block.id=`map-${id}`;
   block.append(text(grouped?'h3':'h2','場所・Yahoo!マップ'),text('p',map.name,'map-place'));
+  appendMapContent(block,map);return block;
+}
+function appendMapContent(block,map) {
+  const url=new URL(map.embed);
+  if(url.origin!=='https://map.yahoo.co.jp'||url.pathname!=='/embedmap/V3/embedmap')throw new Error('Invalid map URL');
   const frame=document.createElement('iframe');frame.className='guide-map-frame';frame.src=url.href;frame.title=`${map.name}のYahoo!マップ`;
   frame.loading='lazy';frame.width=600;frame.height=340;frame.referrerPolicy='no-referrer';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups');
   block.append(frame);
   if(map.caption)block.append(text('p',map.caption,'map-caption'));
   const link=sourceLink({label:'Yahoo!マップを別タブで開く ↗',url:map.url});link.className='spot-link';block.append(link);
-  return block;
 }
 function selectDay(index){
   content.querySelectorAll('[role=tab]').forEach((node,i)=>{node.setAttribute('aria-selected',String(i===index));node.tabIndex=i===index?0:-1;});
   content.querySelectorAll('[role=tabpanel]').forEach((node,i)=>node.hidden=i!==index);
   content.querySelectorAll('.day-jump').forEach((node,i)=>node.setAttribute('aria-pressed',String(i===index)));
   content.querySelectorAll('.destination-card').forEach(link=>{const url=new URL(link.href);url.searchParams.set('day',index+1);link.href=url.href;});
+  content.querySelectorAll('.map-directory-link').forEach(link=>{const url=new URL(link.href);url.searchParams.set('day',index+1);link.href=url.href;});
 }
 function setNotice(message='') { sessionStatus.textContent=message; sessionStatus.hidden=!message; }
 function setBusy(value, label='ひらいています…') {
@@ -278,13 +311,15 @@ async function decryptPayload(key,payload) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 function openViewer(data,focus=true) {
-  const guideId = new URL(window.location.href).searchParams.get('spot');
-  if (guideId) renderGuide(data, guideId); else {render(data);const day=returnDay();if(day)selectDay(day-1);}
-  document.querySelector('.brand').href=guideId?itineraryUrl():'#content';
+  const params=new URL(window.location.href).searchParams,guideId=params.get('spot'),maps=params.get('maps')==='1';
+  if(maps)renderMapDirectory(data);else if (guideId) renderGuide(data, guideId); else {render(data);const day=returnDay();if(day)selectDay(day-1);}
+  document.querySelector('.brand').href=guideId||maps?itineraryUrl():'#content';
+  document.querySelector('.header-town-link').href=maps?new URL('#destination-guides',itineraryUrl()).href:'#destination-guides';
   opened=true;gate.hidden=true;opening.hidden=true;itinerary.hidden=false;passwordInput.value='';
   passwordInput.type='password';showPassword.textContent='表示';showPassword.setAttribute('aria-pressed','false');
   void miniMaro.mount(content);
   if(focus)content.focus();window.scrollTo(0,0);
+  if(!maps&&!guideId){const target=timelineTarget(data,window.location.hash||'');if(target){selectDay(target.dayIndex);const event=document.getElementById(target.id);event.classList.add('event-from-map');event.scrollIntoView({block:'start',behavior:'auto'});event.focus({preventScroll:true});}}
 }
 function closeViewer(showGate=true) {
   miniMaro.unmount();

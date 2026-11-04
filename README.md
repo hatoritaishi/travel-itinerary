@@ -37,6 +37,9 @@ Do not add confidential or identifying data to this viewer.
 
 Destination guides share consistent actions, photo sizing, and Yahoo! Map embeds.
 Souvenir cards use small official product photos and link to their product pages.
+The top map button opens a chronological map directory. Each place appears once,
+at its first scheduled visit, and its heading opens that exact timeline event.
+Map headings retain the itinerary's time labels, including approximate times.
 
 Deploy the repository root with GitHub Pages. No package installation or
 custom GitHub Actions workflow is required. Serve over HTTPS for Web Crypto.
@@ -69,5 +72,5 @@ and native gait-v3 left/right running cels. Whole-body registration aligns all
 states with the original standing artwork without changing individual body parts.
 No audio.
 
-Files: `index.html`, `styles.css`, `app.js`, `remember.js`, encrypted `payload.json`,
+Files: `index.html`, `styles.css`, `app.js`, `map-navigation.js`, `remember.js`, encrypted `payload.json`,
 `mini-maro.js`, `mini-maro-motion.js`, `mini-maro-space.js`, and `assets/mini-maro/`.

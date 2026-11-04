@@ -1,4 +1,5 @@
 import {PET_ENTRY, PET_RETURN, duration, frameAt, idleMotion} from './mini-maro-motion.js';
+import {createMaroFollower} from './mini-maro-space.js?v=follow-14';
 
 const ROOT = new URL('./assets/mini-maro/', import.meta.url);
 const SHEETS = {standing:'standing.webp', pet:'banzai.webp', heart:'heart.webp', 'high-five':'high-five.webp'};
@@ -9,7 +10,8 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
   // Decide once per document, including history restores. A page without Maro loads no artwork.
   const selected = random() < 0.35;
   const images = new Map();
-  let button, canvas, ctx, host, events, observer, timer, raf, blinkTimer, blinkRaf, blinkImages, kind = 'standing';
+  let button, canvas, ctx, host, home, events, follower, timer, raf, blinkTimer, blinkRaf, blinkImages, kind = 'standing';
+  let walkImages, walkLoading, walkDirection='right';
   let generation = 0, mountGeneration = 0, inView = false, ready = false, started = 0, petHoldUntil = 0, motion;
   const image = path => {
     if (!images.has(path)) {
@@ -25,12 +27,27 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
   const active = () => ready && button?.isConnected && inView && !document.hidden;
   const draw = (state, frame = 0) => {
     if (!ctx) return;
+    // Render once at the screen's actual pixel density. A large fixed canvas
+    // shrunk again by CSS loses fine fur and face lines with low-quality sampling.
+    const bounds = canvas.getBoundingClientRect();
+    const density = Math.min(6, Math.max(1, window.devicePixelRatio || 1));
+    const width = Math.max(1, Math.round(bounds.width * density));
+    const height = Math.max(1, Math.round(bounds.height * density));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width; canvas.height = height;
+      ctx.setTransform(width / 512, 0, 0, height / 560, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
     ctx.clearRect(0, 0, 512, 560);
     if (state === 'blink') {
       ctx.drawImage(blinkImages[frame], 0, 0, 512, 560);
     } else if (state === 'cheek') {
-      // Same whole-cel registration as the adopted room animation, aligned to the 512px body.
-      ctx.drawImage(motion.images.get(frame), -38, -2, 560, 560);
+      // A fixed whole-body registration: same crown, face midpoint and soles as standing.
+      ctx.drawImage(motion.images.get(frame), -35.208, 11.970, 554.991, 554.991);
+    } else if (state === 'walk') {
+      // Undo the native overlay's common registration margin, without warping the body.
+      ctx.drawImage(walkImages[walkDirection][frame], -35.271111, -53.495935, 582.542222, 637.398374);
     } else {
       ctx.drawImage(motion?.image && state !== 'standing' ? motion.image : standingImage,
         frame * 512, 0, 512, 560, 0, 0, 512, 560);
@@ -53,7 +70,7 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
       blinkTimer = 0;
       const token = generation;
       try {
-        const [half, closed] = await Promise.all([image('blink-half.webp'), image('blink-closed.webp')]);
+        const [half, closed] = await Promise.all([image('standing-blink-half.webp'), image('standing-blink-closed.webp')]);
         if (token !== generation || !active() || kind !== 'standing') return;
         blinkImages = {half, closed};
         const began = performance.now();
@@ -76,14 +93,15 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
   };
   const tick = now => {
     if (!active()) {rest(); return;}
-    const elapsed = now - started;
+    const elapsed = Math.max(0, now - started);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let frame;
-    if (reduced) frame = elapsed < 1800 ? ({pet:7, heart:5, 'high-five':5, cheek:'happy_full'})[kind] : null;
+    if (kind === 'walk') frame = Math.floor(elapsed / 120) % 8;
+    else if (reduced) frame = elapsed < 1800 ? ({pet:7, heart:5, 'high-five':5, cheek:'happy_full'})[kind] : null;
     else if (kind === 'pet') frame = elapsed < ENTRY_MS ? frameAt(PET_ENTRY, elapsed)
       : now < petHoldUntil ? 7 : frameAt(PET_RETURN, now - petHoldUntil);
     else frame = frameAt(motion.timeline, elapsed);
-    if (frame === null) {rest(); return;}
+    if (frame === null) {rest(); follower?.refresh(); return;}
     draw(kind, frame); raf = requestAnimationFrame(tick);
   };
   async function play(next) {
@@ -105,7 +123,7 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
     }
   }
   const activity = () => {
-    if (kind !== 'standing' && kind !== 'pet') rest();
+    if (kind !== 'standing' && kind !== 'pet' && kind !== 'walk') rest();
     else schedule();
   };
   const pet = () => {
@@ -115,11 +133,26 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
     }
     if (kind !== 'pet') void play({kind:'pet'});
   };
+  async function prepareWalk() {
+    if(walkImages||walkLoading)return;
+    walkLoading=Promise.all(['left','right'].map(async direction=>[direction,await Promise.all(
+      Array.from({length:8},(_,index)=>image(`walk/${direction}_${String(index+1).padStart(2,'0')}.webp`))
+    )]));
+    try {walkImages=Object.fromEntries(await walkLoading);}
+    catch { /* Retry on a later scroll; standing artwork remains available. */ }
+    finally {walkLoading=null;follower?.refresh();}
+  }
+  const walking = (moving,direction) => {
+    if(!moving){if(kind==='walk')rest();return;}
+    if(!walkImages||kind==='pet')return;
+    walkDirection=direction;
+    if(kind!=='walk'){cancel();kind='walk';motion=null;started=performance.now();raf=requestAnimationFrame(tick);}
+  };
   function unmount() {
     mountGeneration++;
-    cancel(); ready = false; inView = false; events?.abort(); observer?.disconnect();
-    host?.classList.remove('mini-maro-host'); button?.remove();
-    button = canvas = ctx = host = null; kind = 'standing'; motion = null;
+    cancel(); ready = false; inView = false; events?.abort(); follower?.destroy();follower=null;
+    host?.classList.remove('mini-maro-host'); home?.remove();button?.remove();
+    button = canvas = ctx = host = home = null; kind = 'standing'; motion = null;
   }
   async function mount(content) {
     unmount();
@@ -131,23 +164,25 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
     button.setAttribute('aria-label', 'みにまろちゃんをなでなでする');
     button.dataset.motion = 'loading';
     canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 560; canvas.setAttribute('aria-hidden','true');
-    button.append(canvas); host.append(button); host.classList.add('mini-maro-host');
+    home=document.createElement('span');home.className='mini-maro-home';home.setAttribute('aria-hidden','true');
+    button.append(canvas);host.append(home);document.body.append(button);host.classList.add('mini-maro-host');
     ctx = canvas.getContext('2d');
     events = new AbortController();
     button.addEventListener('click', pet, {signal:events.signal});
     for (const event of ['pointerdown','pointermove','keydown','scroll'])
       window.addEventListener(event, activity, {passive:true, signal:events.signal});
+    window.addEventListener('resize', () => {
+      if (ready) draw(button.dataset.motion, kind === 'cheek' || button.dataset.motion === 'blink'
+        ? button.dataset.frame : Number(button.dataset.frame));
+    }, {signal:events.signal});
     document.addEventListener('visibilitychange', () => {if (document.hidden) rest(); else {schedule(); scheduleBlink();}}, {signal:events.signal});
     window.addEventListener('pagehide', rest, {signal:events.signal});
-    observer = new IntersectionObserver(entries => {
-      inView = entries[0].isIntersecting;
-      if (!inView) rest(); else {schedule(); scheduleBlink();}
-    });
-    observer.observe(button);
     try {
       standingImage = await image(SHEETS.standing);
       if (token !== mountGeneration) return;
       ready = true; button.dataset.ready = 'true'; draw('standing'); schedule(); scheduleBlink();
+      follower=createMaroFollower({button,home,onNeedWalk:()=>{void prepareWalk();},canMove:()=>!!walkImages&&kind!=='pet',
+        onMoving:walking,onVisibility:visible=>{inView=visible;if(!visible)rest();else{schedule();scheduleBlink();}}});
     } catch {if (token === mountGeneration) unmount();}
   }
   return {mount, unmount};

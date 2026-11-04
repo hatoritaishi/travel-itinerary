@@ -1,6 +1,6 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
-import { createMiniMaro } from './mini-maro.js';
+import { createMiniMaro } from './mini-maro.js?v=follow-quality-14';
 const miniMaro = createMiniMaro();
 const gate = document.getElementById('gate');
 const opening = document.getElementById('opening');

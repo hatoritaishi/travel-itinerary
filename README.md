@@ -33,18 +33,28 @@ Do not add confidential or identifying data to this viewer.
 Deploy the repository root with GitHub Pages. No package installation or
 custom GitHub Actions workflow is required. Serve over HTTPS for Web Crypto.
 
-A stationary mini Maro appears on 35% of page loads. Tapping plays the adopted
+A mini Maro appears on 35% of page loads. Tapping plays the adopted
 petting banzai; after 20–35 seconds without interaction, a random heart hug,
 high-five, or cheek rub plays. Reading interaction interrupts idle gestures.
 Artwork is loaded only when selected, with gesture assets loaded on demand.
-Wide screens use the outer page gutter; narrow screens reserve normal layout
-space beside the route or guide heading, including after content is added.
+After a short delay on scroll, Maro follows at a gentle running pace, up to
+115 CSS pixels per second with gradual acceleration and 120ms walking cels.
+Text line rectangles, photos, media and interactive controls are detected from
+the current DOM. Routes are checked across the full character footprint.
+Mutation, resize, scroll and media-load observers recheck added or changed content.
+When no safe space or route exists, Maro waits or hides until space is available.
+The original header slot remains reserved. Reduced motion skips running.
 Standing Maro blinks at random 3–7 second intervals using adopted whole cels.
+The canvas matches the display's pixel density and uses high-quality image
+resampling directly to its displayed size, retaining fine facial and fur detail.
 Reduced-motion settings use a still pose and skip automatic blinking.
 
 Maro artwork is copied unchanged from adopted assets at source commit
 `79737822383ce1fe933182af23346c7b6bb5e883`: standing, pet-banzai-v1,
-heart-hug-v3, paw-wave-v1, and cheek-circles-soft-arms-v6. No walking or audio.
+heart-hug-v3, paw-wave-v1, cheek-circles-soft-arms-v6, Web standing blink,
+and native gait-v3 left/right running cels. Whole-body registration aligns all
+states with the original standing artwork without changing individual body parts.
+No audio.
 
 Files: `index.html`, `styles.css`, `app.js`, `remember.js`, encrypted `payload.json`,
-`mini-maro.js`, `mini-maro-motion.js`, and `assets/mini-maro/`.
+`mini-maro.js`, `mini-maro-motion.js`, `mini-maro-space.js`, and `assets/mini-maro/`.

@@ -11,8 +11,9 @@ automatically opens the same payload on later visits in that browser. The
 password and decrypted itinerary are not persisted. Other devices/browsers,
 cleared browser data, and payload key
 changes require another unlock. If storage is unavailable, viewing still works
-and the page reports that the login could not be remembered. No analytics, third-party scripts,
-account details, booking identifiers, payment details, or tracking are included.
+and the page reports that the login could not be remembered. The parent page uses
+no analytics or third-party scripts. Yahoo! maps load inside isolated frames.
+Account details, booking identifiers, and payment details are not included.
 
 Spot explanations open in separate tabs using the `spot` query parameter.
 Guide URLs retain the originating itinerary day. Prominent return links at
@@ -34,10 +35,13 @@ A short numeric password is a convenience gate, not strong access control.
 Public encrypted payloads can be downloaded and subjected to offline guesses.
 Do not add confidential or identifying data to this viewer.
 
+Destination guides share consistent actions, photo sizing, and Yahoo! Map embeds.
+Souvenir cards use small official product photos and link to their product pages.
+
 Deploy the repository root with GitHub Pages. No package installation or
 custom GitHub Actions workflow is required. Serve over HTTPS for Web Crypto.
 
-A mini Maro appears on 35% of page loads. Tapping plays the adopted
+A mini Maro appears on 50% of page loads. Tapping plays the adopted
 petting banzai; after 20–35 seconds without interaction, a random heart hug,
 high-five, or cheek rub plays. Reading interaction interrupts idle gestures.
 Artwork is loaded only when selected, with gesture assets loaded on demand.

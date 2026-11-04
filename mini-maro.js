@@ -8,7 +8,7 @@ const ENTRY_MS = duration(PET_ENTRY);
 export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + random() * 15000,
   blinkDelay = () => 3000 + random() * 4000} = {}) {
   // Decide once per document, including history restores. A page without Maro loads no artwork.
-  const selected = random() < 0.35;
+  const selected = random() < 0.5;
   const images = new Map();
   let button, canvas, ctx, host, home, events, follower, timer, raf, blinkTimer, blinkRaf, blinkImages, kind = 'standing';
   let walkImages, walkLoading, walkDirection='right';

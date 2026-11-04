@@ -1,6 +1,6 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
-import { createMiniMaro } from './mini-maro.js?v=steady-16';
+import { createMiniMaro } from './mini-maro.js?v=appearance-19';
 const miniMaro = createMiniMaro();
 const gate = document.getElementById('gate');
 const opening = document.getElementById('opening');
@@ -191,6 +191,10 @@ function renderGuideArticle(guide,id,grouped,checkedOn) {
   article.id = `guide-${id}`;
   const header = document.createElement('header'); header.className = 'guide-header';
   header.append(text('p', guide.area, 'eyebrow'), text(grouped?'h2':'h1', guide.name), text('p', guide.lead, 'guide-lead'));
+  const actions=document.createElement('div');actions.className='guide-actions';
+  if(guide.map){const link=text('a','地図を見る ↓','spot-link');link.href=`#map-${id}`;actions.append(link);}
+  if(guide.official){const link=sourceLink({label:'公式サイト ↗',url:guide.official.url});link.className='spot-link';actions.append(link);}
+  if(actions.childElementCount)header.append(actions);
   article.append(header);
   if (guide.photo) {
     const figure = document.createElement('figure'); figure.className = 'guide-figure';
@@ -206,6 +210,7 @@ function renderGuideArticle(guide,id,grouped,checkedOn) {
   }
   for (const section of guide.sections) {
     const block = document.createElement('section'); block.className = 'guide-section';
+    if(guide.kind==='hotel'&&section.heading==='今回の滞在')block.classList.add('stay-summary');
     block.append(text(grouped?'h3':'h2', section.heading));
     if (section.body) block.append(text('p', section.body));
     if (section.source) {const source=document.createElement('p');source.append(sourceLink(section.source));block.append(source);}
@@ -213,8 +218,10 @@ function renderGuideArticle(guide,id,grouped,checkedOn) {
       const list = document.createElement('ul');
       section.items.forEach(item => list.append(text('li', item))); block.append(list);
     }
+    if(section.products?.length)block.append(renderProducts(section.products,grouped));
     article.append(block);
   }
+  if(guide.map)article.append(renderPlaceMap(guide.map,id,grouped));
   if (guide.official) {
     const links = document.createElement('div'); links.className = 'guide-official';
     const link = sourceLink({label:'公式ホームページを開く ↗',url:guide.official.url});
@@ -222,6 +229,32 @@ function renderGuideArticle(guide,id,grouped,checkedOn) {
   }
   article.append(text('p', `案内確認：${checkedOn}`, 'guide-checked'));
   content.append(article);
+}
+function renderProducts(products,grouped) {
+  const list=document.createElement('ul');list.className='product-list';
+  for(const product of products){
+    const item=document.createElement('li');item.className='product-item';
+    const photo=sourceLink({label:'',url:product.url});photo.className='product-photo-link';photo.setAttribute('aria-label',`${product.name}の公式ページを開く`);
+    const image=document.createElement('img');image.className='product-photo';image.src=product.image.url;image.alt=product.image.alt;
+    image.width=80;image.height=80;image.loading='lazy';image.decoding='async';image.referrerPolicy='no-referrer';photo.append(image);
+    const copy=document.createElement('div');copy.className='product-copy';const heading=text(grouped?'h4':'h3','','product-heading');
+    const link=sourceLink({label:`${product.name} ↗`,url:product.url});link.className='product-name';heading.append(link);
+    const credit=text('p','画像：','product-credit');credit.append(sourceLink({label:product.image.credit,url:product.image.source}));
+    copy.append(heading,text('p',product.description,'product-description'),credit);item.append(photo,copy);list.append(item);
+  }
+  return list;
+}
+function renderPlaceMap(map,id,grouped) {
+  const url=new URL(map.embed);
+  if(url.origin!=='https://map.yahoo.co.jp'||url.pathname!=='/embedmap/V3/embedmap')throw new Error('Invalid map URL');
+  const block=document.createElement('section');block.className='guide-section guide-map';block.id=`map-${id}`;
+  block.append(text(grouped?'h3':'h2','場所・Yahoo!マップ'),text('p',map.name,'map-place'));
+  const frame=document.createElement('iframe');frame.className='guide-map-frame';frame.src=url.href;frame.title=`${map.name}のYahoo!マップ`;
+  frame.loading='lazy';frame.width=600;frame.height=340;frame.referrerPolicy='no-referrer';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups');
+  block.append(frame);
+  if(map.caption)block.append(text('p',map.caption,'map-caption'));
+  const link=sourceLink({label:'Yahoo!マップを別タブで開く ↗',url:map.url});link.className='spot-link';block.append(link);
+  return block;
 }
 function selectDay(index){
   content.querySelectorAll('[role=tab]').forEach((node,i)=>{node.setAttribute('aria-selected',String(i===index));node.tabIndex=i===index?0:-1;});

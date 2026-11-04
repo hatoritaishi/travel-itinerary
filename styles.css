@@ -61,3 +61,19 @@
 @media print{.mini-maro,.mini-maro-home{display:none!important}.guide-header.mini-maro-host{display:block}}
 .day-tabs[role=tablist]{scroll-margin-top:1rem}.day-jumps{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line);border-bottom:0}
 .day-jump[aria-pressed=true]{background:var(--green);color:#d7e4d8}.day-jump[aria-pressed=true] strong{color:var(--white)}
+.guide-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}.guide-actions .spot-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;font-size:.85rem;padding:.55rem .85rem;border-radius:7px}
+.guide-header.mini-maro-host>.guide-actions{grid-column:1/-1}
+.official-link{background:#075d9b;min-height:44px;border-radius:7px}.official-link:hover{background:#004477}
+.guide-photo{max-height:420px;object-fit:contain}.guide-section.stay-summary{margin:1.2rem 0;padding:1.1rem;background:var(--light);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:8px}
+.stay-summary h2,.stay-summary h3{margin-top:0}
+.guide-section .product-list{display:grid;gap:.8rem;list-style:none;padding:0;margin:1rem 0 0}
+.guide-section .product-item{display:grid;grid-template-columns:80px minmax(0,1fr);gap:1rem;margin:0;padding:.9rem;border:1px solid #d3dfdf;border-radius:8px;background:var(--white)}
+.product-photo-link{display:block;align-self:start;border-radius:6px}.product-photo{display:block;width:80px;height:80px;object-fit:contain;border-radius:6px;background:#fff}
+.product-copy{min-width:0}.guide-section .product-heading{font:600 1rem/1.5 "Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;margin:0}
+.product-name{color:#075d9b;text-decoration:underline;text-underline-offset:3px}.product-name:hover{color:#004477}
+.guide-section .product-description{font-size:.9rem;line-height:1.85;margin:.4rem 0 .5rem}.guide-section .product-credit{font-size:.68rem;line-height:1.7;margin:0;color:var(--muted)}.product-credit a{color:var(--muted);text-underline-offset:2px}
+.guide-map{scroll-margin-top:5rem;margin-top:1.5rem;padding:1rem;border:1px solid #d3dfdf;border-radius:8px;background:var(--white)}
+.guide-map h2,.guide-map h3{margin-top:0}.guide-section .map-place{font-size:.9rem;margin:0 0 .7rem;color:var(--ink)}
+.guide-map-frame{display:block;width:100%;height:320px;border:0;border-radius:6px;background:var(--light)}.guide-section .map-caption{font-size:.78rem;margin:.75rem 0;color:var(--muted)}.guide-map>.spot-link{margin-top:.8rem;min-height:44px}
+@media(max-width:700px){.guide-actions{gap:.45rem}.guide-photo{max-height:300px}.guide-section .product-item{grid-template-columns:64px minmax(0,1fr);gap:.75rem;padding:.75rem}.product-photo{width:64px;height:64px}.guide-section .product-heading{font-size:.95rem}.guide-map{padding:.8rem}.guide-map-frame{height:270px}}
+@media print{.guide-map-frame{display:none}.guide-actions{display:none}}

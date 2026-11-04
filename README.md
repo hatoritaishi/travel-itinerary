@@ -15,6 +15,10 @@ and the page reports that the login could not be remembered. No analytics, third
 account details, booking identifiers, payment details, or tracking are included.
 
 Spot explanations open in separate tabs using the `spot` query parameter.
+Guide URLs retain the originating itinerary day. Prominent return links at
+the top and bottom restore that day. Town introductions have large cards above
+the day tabs, a header shortcut, and a switcher between town guides.
+Blue underlined headings identify guide links.
 They are included in the encrypted payload and use the same viewing key.
 Sightseeing and hotel headings link directly to illustrated guides, including
 grouped places. Guides link to official websites; the station guide focuses on

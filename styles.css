@@ -9,11 +9,21 @@
 .alternative-route h4{margin:0 0 .5rem;font-size:.9rem;font-weight:600;color:var(--ink)}
 .alternative-route p{margin:0 0 .6rem}.alternative-route p:last-child{margin-bottom:0}
 .alternative-route a{color:var(--green);text-underline-offset:3px}
-.spot-title-link{color:var(--green);text-decoration:underline;text-decoration-color:#a6b9a9;text-underline-offset:4px}
-.guide-cue{display:inline-block;margin-left:.7rem;font-size:.7rem;font-weight:400;white-space:nowrap;color:var(--muted)}
+.spot-title-link{color:#075d9b;text-decoration:underline;text-decoration-color:currentColor;text-decoration-thickness:2px;text-underline-offset:4px}
+.guide-cue{display:inline-block;margin-left:.7rem;padding:.1rem .45rem;border:1px solid #b8d0e5;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap;color:#075d9b;background:#e4eff9}
 .spot-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
-.spot-link{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:.45rem .65rem;font-size:.78rem;color:var(--green);text-decoration:none;background:var(--white)}
-.spot-link:hover,.spot-title-link:hover{color:var(--orange);border-color:var(--orange)}
+.spot-link{display:inline-block;border:1px solid #b8d0e5;border-radius:6px;padding:.45rem .65rem;font-size:.78rem;color:#075d9b;text-decoration:underline;text-underline-offset:3px;background:var(--white)}
+.spot-link:hover,.spot-title-link:hover{color:#004477;border-color:#075d9b}
+.header-actions{display:flex;align-items:center;gap:.65rem}.header-town-link{color:#075d9b;text-decoration:none;font-weight:600}
+.destination-guides{margin:0 0 2.2rem;scroll-margin-top:1rem}.destination-guides-title{font-size:1rem;margin:0 0 .8rem;font-weight:600}
+.destination-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.85rem}
+.destination-card{display:flex;flex-direction:column;gap:.65rem;padding:1.15rem;border:1px solid #b8d0e5;border-radius:9px;background:var(--white);color:var(--ink);text-decoration:none;box-shadow:0 2px 0 #075d9b0d}
+.destination-card:hover{border-color:#075d9b;background:#eff5fa}.destination-name{font-family:"Yu Mincho",serif;font-size:1.5rem;line-height:1.2;color:#075d9b}.destination-summary{font-size:.8rem;color:var(--muted);line-height:1.7}.destination-cta{margin-top:auto;font-size:.8rem;color:#075d9b;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.city-switcher{max-width:780px;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:1rem;margin:0 auto 1.8rem;border:1px solid #b8d0e5;border-radius:8px;background:#edf4fa;scroll-margin-top:5rem}.city-switch-label{font-size:.8rem;font-weight:600;color:var(--muted);margin-right:.3rem}.city-switch-link{padding:.45rem .7rem;color:#075d9b;font-size:.85rem;text-underline-offset:3px;border-radius:5px}.city-switch-link[aria-current=page]{color:#fff;background:#075d9b;text-decoration:none}
+@media(max-width:700px){.destination-cards{grid-template-columns:1fr;gap:.6rem}.destination-card{display:grid;grid-template-columns:4.5rem 1fr;gap:.35rem .6rem;padding:.9rem}.destination-name{grid-row:1/3;align-self:center;font-size:1.35rem}.destination-summary{font-size:.76rem}.destination-cta{font-size:.75rem}.header-actions{gap:.4rem}.header-actions .quiet-button{padding:.4rem .65rem}.city-switcher{padding:.75rem;gap:.3rem}.city-switch-label{width:100%}}
+.guide-navigation{position:sticky;top:0;z-index:3;padding:.5rem 0 1rem;background:var(--paper);margin-bottom:1.4rem}
+.guide-return{display:inline-flex;align-items:center;min-height:44px;padding:.65rem 1rem;border-radius:7px;background:#075d9b;color:#fff;text-decoration:none;font-size:.9rem;font-weight:600;box-shadow:0 2px 5px #203d3c16}
+.guide-return:hover{background:#004477}.guide-return-bottom{max-width:780px;margin:2rem auto}
 .guide-back{display:inline-block;color:var(--muted);font-size:.82rem;margin-bottom:1.6rem;text-underline-offset:4px}
 .spot-guide{max-width:780px;margin:0 auto 2rem}.guide-header{padding-bottom:1.8rem;border-bottom:1px solid var(--line)}
 .guide-header h1{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.5;margin-bottom:1rem}

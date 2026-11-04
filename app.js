@@ -1,6 +1,6 @@
 'use strict';
 import { readRemembered, saveRemembered, forgetRemembered } from './remember.js';
-import { createMiniMaro } from './mini-maro.js?v=follow-quality-14';
+import { createMiniMaro } from './mini-maro.js?v=steady-16';
 const miniMaro = createMiniMaro();
 const gate = document.getElementById('gate');
 const opening = document.getElementById('opening');
@@ -37,10 +37,11 @@ function guideLink(id, label, dayNumber) {
 }
 function renderDestinationGuides(data) {
   const section=document.createElement('section');section.id='destination-guides';section.className='destination-guides';section.setAttribute('aria-labelledby','destination-guides-title');
-  section.append(text('h2','旅先ガイド','destination-guides-title'));
+  const heading=text('h2','旅先ガイド','destination-guides-title');heading.append(text('span','写真と解説','destination-heading-cue'));section.append(heading);
   const cards=document.createElement('div');cards.className='destination-cards';
   for(const id of data.destinationGuideIds||[]) {
     const guide=data.guides[id];const card=guideLink(id,'',returnDay()||1);card.className='destination-card';
+    card.setAttribute('aria-label',`${guide.cardName||guide.cityName}の写真と解説を開く`);
     card.append(text('span',guide.cardName||guide.cityName,'destination-name'),text('span',guide.summary,'destination-summary'),text('span','写真と解説を見る ↗','destination-cta'));
     cards.append(card);
   }
@@ -50,7 +51,9 @@ function renderCitySwitcher(data,currentId) {
   const nav=document.createElement('nav');nav.id='destination-guides';nav.className='city-switcher';nav.setAttribute('aria-label','旅先ガイドを切り替える');
   nav.append(text('span','旅先ガイド','city-switch-label'));
   for(const id of data.destinationGuideIds||[]) {
-    const link=guideLink(id,data.guides[id].navigationLabel||data.guides[id].name,returnDay());link.target='_self';link.className='city-switch-link';
+    const guide=data.guides[id],label=guide.navigationLabel||guide.name;
+    const link=guideLink(id,'',returnDay());link.target='_self';link.className='city-switch-link';link.setAttribute('aria-label',label);
+    link.append(text('span',label,'city-switch-full'),text('span',guide.cardName||guide.cityName,'city-switch-short'));
     if(id===currentId)link.setAttribute('aria-current','page');nav.append(link);
   }
   return nav;

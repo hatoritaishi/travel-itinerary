@@ -20,6 +20,8 @@ the top and bottom restore that day. Destination introductions, including
 Akiyoshido Cave, Akiyoshidai Plateau, Hagi, Iwakuni, and Hiroshima, have large
 cards above the day tabs, footer navigation, and a switcher between guides.
 Blue underlined headings identify guide links.
+On phones, destination links and guide switches use a single compact row.
+Narrower screens can scroll the row horizontally instead of stacking the links.
 They are included in the encrypted payload and use the same viewing key.
 Sightseeing and hotel headings link directly to illustrated guides, including
 grouped places. Guides link to official websites; the station guide focuses on
@@ -37,11 +39,16 @@ A mini Maro appears on 35% of page loads. Tapping plays the adopted
 petting banzai; after 20–35 seconds without interaction, a random heart hug,
 high-five, or cheek rub plays. Reading interaction interrupts idle gestures.
 Artwork is loaded only when selected, with gesture assets loaded on demand.
-After a short delay on scroll, Maro follows at a gentle running pace, up to
+Maro stays hidden and stops moving during scrolling, including inertia and
+visual-viewport changes. Following resumes only after movement stops and two
+consecutive frames have identical viewport positions. Maro follows at a gentle pace, up to
 115 CSS pixels per second with gradual acceleration and 120ms walking cels.
 Text line rectangles, photos, media and interactive controls are detected from
 the current DOM. Routes are checked across the full character footprint.
 Mutation, resize, scroll and media-load observers recheck added or changed content.
+Safe rechecks retain the visible frame. Obstructed positions wait for stable
+space before revealing again. Walking cels are decoded in advance and replace
+the canvas in one operation without a blank clear between frames.
 When no safe space or route exists, Maro waits or hides until space is available.
 The original header slot remains reserved. Reduced motion skips running.
 Standing Maro blinks at random 3–7 second intervals using adopted whole cels.

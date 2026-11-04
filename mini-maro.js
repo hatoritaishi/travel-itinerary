@@ -1,5 +1,5 @@
 import {PET_ENTRY, PET_RETURN, duration, frameAt, idleMotion} from './mini-maro-motion.js';
-import {createMaroFollower} from './mini-maro-space.js?v=follow-14';
+import {createMaroFollower} from './mini-maro-space.js?v=steady-16';
 
 const ROOT = new URL('./assets/mini-maro/', import.meta.url);
 const SHEETS = {standing:'standing.webp', pet:'banzai.webp', heart:'heart.webp', 'high-five':'high-five.webp'};
@@ -17,7 +17,10 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
     if (!images.has(path)) {
       const value = new Image(); value.decoding = 'async';
       images.set(path, new Promise((resolve, reject) => {
-        value.onload = () => resolve(value);
+        value.onload = async () => {
+          try {if(value.decode)await value.decode();resolve(value);}
+          catch {images.delete(path);reject(new Error('Maro artwork unavailable'));}
+        };
         value.onerror = () => {images.delete(path); reject(new Error('Maro artwork unavailable'));};
         value.src = new URL(path, ROOT).href;
       }));
@@ -39,7 +42,9 @@ export function createMiniMaro({random = Math.random, idleDelay = () => 20000 + 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
     }
-    ctx.clearRect(0, 0, 512, 560);
+    // Replace the complete frame in one operation, with no visible blank
+    // clear between walking cels. Images are decoded before animation starts.
+    ctx.globalCompositeOperation = 'copy';
     if (state === 'blink') {
       ctx.drawImage(blinkImages[frame], 0, 0, 512, 560);
     } else if (state === 'cheek') {

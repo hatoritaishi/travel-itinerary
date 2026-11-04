@@ -87,66 +87,115 @@ export function collectObstacles(root, character, viewport) {
 
 export function createMaroFollower({button,home,onVisibility,onMoving,onNeedWalk,canMove}) {
   const size={width:80,height:88};
+  const stopDelay=240;
   const events=new AbortController();
   let position,obstacles=[],viewport,raf=0,wakeTimer=0,dirty=true,following=false,visible=false,destroyed=false;
   let path=[],speed=0,lastFrame=0,followAfter=0,lastScroll=-Infinity,lastScrollY=window.scrollY,scrollDirection='right';
-  let scrollOffset=0,offsetUntil=0,blockedAt=null;
-  const preferred=()=>({x:viewport.width-size.width-20,y:clamp(viewport.height-size.height-80+scrollOffset,8,viewport.height-size.height-8)});
-  const show=value=>{button.dataset.safe=String(value);if(visible===value)return;visible=value;onVisibility(value);};
+  let scrolling=false,touchActive=false,settleTimer=0,settleRaf=0,lastSample,stillFrames=0,hiddenSince=null,lastInvalidation=-Infinity,plannedTarget;
+  const preferred=()=>({x:viewport.width-size.width-20,y:Math.max(8,viewport.height-size.height-80)});
+  const show=value=>{
+    if(visible===value)return;
+    visible=value;button.dataset.safe=String(value);
+    if(!value)hiddenSince=performance.now();else hiddenSince=null;
+    onVisibility(value);
+  };
   const queue=()=>{if(!destroyed&&!raf)raf=requestAnimationFrame(step);};
-  const refresh=()=>{dirty=true;button.dataset.safe='false';queue();};
+  const readScene=()=>{
+    viewport={width:document.documentElement.clientWidth,height:window.innerHeight};
+    obstacles=collectObstacles(document.body,button,viewport);dirty=false;
+  };
+  const refresh=()=>{
+    if(destroyed)return;
+    dirty=true;lastInvalidation=performance.now();
+    // Keep a safe, already visible frame on screen. A geometry check itself must
+    // never blank the character; hide only for scrolling or a real obstruction.
+    if(visible&&!scrolling){readScene();if(!canStand(position,obstacles,viewport,size))show(false);}
+    queue();
+  };
   const place=()=>{
     const density=window.devicePixelRatio||1;
     button.style.left=`${Math.round(position.x*density)/density}px`;
     button.style.top=`${Math.round(position.y*density)/density}px`;
   };
   const later=delay=>{clearTimeout(wakeTimer);wakeTimer=setTimeout(queue,Math.max(16,delay));};
-  function step(now) {
+  function step() {
     raf=0;
     if(destroyed||document.hidden){show(false);onMoving(false);return;}
-    viewport={width:document.documentElement.clientWidth,height:window.innerHeight};
-    if(scrollOffset&&now>=offsetUntil){scrollOffset=0;path=[];}
-    if(dirty){obstacles=collectObstacles(document.body,button,viewport);dirty=false;path=[];}
+    if(scrolling){onMoving(false);return;}
+    const now=performance.now();
+    if(dirty)readScene();
     if(!position){const rect=home.getBoundingClientRect();position={x:rect.left,y:rect.top};}
     const target=preferred();
-    if(!canStand(position,obstacles,viewport,size)){
+    const obstructed=!canStand(position,obstacles,viewport,size);
+    if(obstructed){
       show(false);onMoving(false);speed=0;
-      if(blockedAt===null)blockedAt=now;
-      if(now<blockedAt+180){later(blockedAt+180-now);return;}
-      if(now<followAfter){later(followAfter-now);return;}
+      if(hiddenSince===null)hiddenSince=now;
+    }
+    if(!visible&&hiddenSince!==null){
+      const revealAt=Math.max(hiddenSince+240,lastScroll+stopDelay,lastInvalidation+120);
+      if(now<revealAt){later(revealAt-now);return;}
+    }
+    if(obstructed){
       const route=safeRoute(position,target,obstacles,viewport,size);
       if(!route)return;
       position={x:route.position.x,y:route.position.y};path=[];
     }
-    blockedAt=null;
     place();show(true);
     if(!following){onMoving(false);return;}
     if(now<followAfter){onMoving(false);later(followAfter-now);return;}
     if(!canMove()){onMoving(false);return;}
-    if(!path.length){const route=safeRoute(position,target,obstacles,viewport,size);path=route?.path||[];}
-    if(!path.length){onMoving(false);speed=0;lastFrame=now;if(scrollOffset)later(offsetUntil-now);return;}
-    if(matchMedia('(prefers-reduced-motion: reduce)').matches){show(false);onMoving(false);return;}
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){onMoving(false);speed=0;return;}
+    if(!plannedTarget||distance(plannedTarget,target)>8||path.length&&!clearPath(position,path[0],obstacles,viewport,size))path=[];
+    if(!path.length){const route=safeRoute(position,target,obstacles,viewport,size);path=route?.path||[];plannedTarget=target;}
+    if(!path.length){onMoving(false);speed=0;lastFrame=now;return;}
     const dt=lastFrame?Math.max(0,Math.min(0.04,(now-lastFrame)/1000)):1/60;lastFrame=now;
     speed=Math.min(115,speed+dt*380);
     const next=path[0],remaining=distance(position,next);
     const travel=Math.min(remaining,speed*dt);
     const candidate={x:position.x+(next.x-position.x)*travel/Math.max(remaining,0.001),y:position.y+(next.y-position.y)*travel/Math.max(remaining,0.001)};
-    if(!clearPath(position,candidate,obstacles,viewport,size)){refresh();onMoving(false);return;}
+    if(!clearPath(position,candidate,obstacles,viewport,size)){path=[];refresh();onMoving(false);return;}
     const direction=candidate.x<position.x-0.01?'left':candidate.x>position.x+0.01?'right':scrollDirection;
     position=candidate;place();onMoving(true,direction);
     if(remaining<=travel+0.01)path.shift();
     queue();
   }
+  const sampleViewport=()=>[window.scrollX||0,window.scrollY||0,window.innerWidth,window.innerHeight,
+    window.visualViewport?.offsetLeft||0,window.visualViewport?.offsetTop||0,window.visualViewport?.scale||1];
+  const checkStillness=()=>{
+    settleRaf=0;if(destroyed||touchActive)return;
+    const current=sampleViewport(),now=performance.now();
+    if(current.every((value,index)=>value===lastSample[index]))stillFrames++;
+    else{stillFrames=0;lastScroll=now;lastSample=current;}
+    if(stillFrames>=2&&now-lastScroll>=stopDelay){
+      scrolling=false;dirty=true;followAfter=now;lastFrame=0;speed=0;path=[];queue();return;
+    }
+    settleRaf=requestAnimationFrame(checkStillness);
+  };
   const scroll=()=>{
     const now=performance.now(),delta=window.scrollY-lastScrollY;lastScrollY=window.scrollY;
     if(delta)scrollDirection=delta<0?'left':'right';
-    if(now-lastScroll>220)followAfter=now+180;
-    lastScroll=now;following=true;onNeedWalk();
-    scrollOffset=clamp(scrollOffset-delta*0.35,-96,96);offsetUntil=now+1000;
-    refresh();
+    lastScroll=now;lastInvalidation=now;following=true;scrolling=true;dirty=true;
+    show(false);onMoving(false);onNeedWalk();
+    cancelAnimationFrame(raf);raf=0;clearTimeout(wakeTimer);
+    clearTimeout(settleTimer);cancelAnimationFrame(settleRaf);settleRaf=0;
+    stillFrames=0;lastSample=sampleViewport();
+    // Stay hidden for the entire gesture, including inertia. Reveal only after
+    // the viewport has stopped and two successive frames have equal positions.
+    settleTimer=setTimeout(()=>{settleRaf=requestAnimationFrame(checkStillness);},stopDelay);
   };
+  const touch=event=>{
+    touchActive=event.touches.length>0;
+    if(!touchActive&&scrolling){
+      lastScroll=performance.now();lastSample=sampleViewport();stillFrames=0;
+      clearTimeout(settleTimer);cancelAnimationFrame(settleRaf);
+      settleTimer=setTimeout(()=>{settleRaf=requestAnimationFrame(checkStillness);},stopDelay);
+    }
+  };
+  for(const event of ['touchstart','touchend','touchcancel'])document.addEventListener(event,touch,{capture:true,passive:true,signal:events.signal});
   window.addEventListener('scroll',scroll,{capture:true,passive:true,signal:events.signal});
-  window.addEventListener('resize',refresh,{passive:true,signal:events.signal});
+  window.addEventListener('resize',scroll,{passive:true,signal:events.signal});
+  window.visualViewport?.addEventListener('scroll',scroll,{passive:true,signal:events.signal});
+  window.visualViewport?.addEventListener('resize',scroll,{passive:true,signal:events.signal});
   document.addEventListener('load',refresh,{capture:true,signal:events.signal});
   document.addEventListener('visibilitychange',refresh,{signal:events.signal});
   const mutations=new MutationObserver(records=>{if(records.some(record=>!button.contains(record.target)&&record.target!==home))refresh();});
@@ -154,5 +203,5 @@ export function createMaroFollower({button,home,onVisibility,onMoving,onNeedWalk
   const resize=new ResizeObserver(refresh);resize.observe(document.body);resize.observe(document.getElementById('content')||document.body);
   document.fonts?.addEventListener('loadingdone',refresh,{signal:events.signal});
   queue();
-  return {refresh,destroy(){destroyed=true;cancelAnimationFrame(raf);clearTimeout(wakeTimer);events.abort();mutations.disconnect();resize.disconnect();show(false);}};
+  return {refresh,destroy(){destroyed=true;cancelAnimationFrame(raf);cancelAnimationFrame(settleRaf);clearTimeout(wakeTimer);clearTimeout(settleTimer);events.abort();mutations.disconnect();resize.disconnect();show(false);}};
 }
